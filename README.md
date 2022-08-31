@@ -21,8 +21,15 @@ Unser Tool kann von allem Menschen genutzt werden, die Texte erstellen und über
 enthalten, wie zum Beispiel Texte von Institutionen, journalistische Texte, Schulen und Unis.
 
 ## Quellen
-* **Antisemitismus in der Sprache**, Ronen Steinke, *Bibliograph. Instit. GmbH*  
-* ...
+* Steinke, R. (2020) **Antisemitismus in der Sprache**. *Duden Bibliograph. Instit. GmbH*.
+
+* Deutsche Welle. **Alltagsdeutsch – Podcast: Dufte!** – *Jiddische Wörter im Deutschen*. 
+https://www.dw.com/de/dufte-jiddische-w%C3%B6rter-im-deutschen/a-4786777. 2022
+
+* Schwarz-Friesel, M., & Reinharz, J. (2013). **Die Sprache der Judenfeindschaft im 21. Jahrhundert (1st ed.)**. 
+*De Gruyter*. http://www.jstor.org/stable/j.ctvbkjx39
+
+* Wikipedia. **Liste deutscher Wörter aus dem Hebräischen und Jiddischen.** https://de.wikipedia.org/wiki/Liste_deutscher_W%C3%B6rter_aus_dem_Hebr%C3%A4ischen_und_Jiddischen. 2022
 
 ## Status
 TODOs:
