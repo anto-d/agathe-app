@@ -1,0 +1,6 @@
+openpyxl
+streamlit ~= 1.8.1
+SoMaJo ~= 2.2.1
+st-annotated-text ~= 3.0.0
+nltk
+

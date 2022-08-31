@@ -1,0 +1,16 @@
+# the virtual environment
+.venv/
+
+# python stuff
+__pycache__/
+*.py[cod]
+.python_version
+
+# idea files
+.idea/
+
+# mac stuff
+.DS_Store
+
+# env files
+*env
