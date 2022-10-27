@@ -32,9 +32,8 @@ eine Alternative/ein Synonym vor.
 
 ---"""
 
-txt = st.text_area('Gib hier deinen Text ein:', '''''')
-
-#
+text = st.text_area('Gib hier deinen Text ein:', '''''')
+txt = text.split("\n")
 
 
 def read_excel_to_dict(excel_file):
@@ -93,23 +92,27 @@ def run_analysis(input_text, filename):
     '''
     dict_words = read_excel_to_dict(filename)
     dict_replacements = build_replacement(dict_words)
-    # TODO support for newlines
     tokenizer = SoMaJo("de_CMC", split_camel_case=True)
-    sentences = tokenizer.tokenize_text([input_text])
-    text_tokenized = []
-    for sentence in sentences:
-        for token in sentence:
-            text_tokenized.append(token.text)
 
-    text_tokenized_set = set(text_tokenized)
+    text_tokenized = []
+    for paragraph in input_text:
+        tokenized_paragraphs = tokenizer.tokenize_text([paragraph])
+        text_tokenized.append([[token.text for token in sentence] for sentence in tokenized_paragraphs])
+
+    text_tokenized_set = {word for paragraph in text_tokenized for sentence in paragraph for word in sentence}
+
     dict_words_set = set(dict_words.keys())
     if text_tokenized_set.intersection(dict_words_set):
-        text_enriched = [dict_replacements[item] if stem_word(item) in dict_replacements.keys() else item + ' '
-                         for item in text_tokenized]
-        text_output = annotated_text(*text_enriched)
+        for paragraph in text_tokenized:
+            for sentence in paragraph:
+                text_output = []
+                sentence_enriched = [dict_replacements[item] if stem_word(item) in dict_replacements.keys() else item + ' '
+                                 for item in sentence]
+                sentence_output = annotated_text(*sentence_enriched)
+                text_output.append(sentence_output)
     else:
         st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter!')
-        text_output = st.write(input_text)
+        text_output = st.write('  \n'.join(input_text))
 
     return text_output
 
