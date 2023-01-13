@@ -2,9 +2,15 @@ import streamlit as st
 from annotated_text import annotated_text, annotation
 import pandas as pd
 from somajo import SoMaJo
-from nltk.stem.snowball import SnowballStemmer
+from iwnlp.iwnlp_wrapper import IWNLPWrapper
 
 st.set_page_config(page_title='Agathe App', layout='wide')
+
+# load stuff
+tokenizer = SoMaJo("de_CMC", split_camel_case=True)
+# TODO improve performance
+# latest processed IWNLP dump: http://lager.cs.uni-duesseldorf.de/NLP/IWNLP/IWNLP.Lemmatizer_20181001.zip
+lemmatizer = IWNLPWrapper(lemmatizer_path='app/IWNLP.Lemmatizer_20181001.json')
 
 # configure sidebar
 st.sidebar.image('logo.png')
@@ -47,38 +53,41 @@ def read_excel_to_dict(excel_file):
     return dict_from_excel
 
 
-def build_replacement(dict_wordlist):
+def replace_word(word, dict_wordlist, lemmatizer):
     '''
-    The functions builds a dictionary to be used to produce the inpu by st.annotated_text: the key is a given word
-    and the value is a tuple built so that the word gets highlighted and an alternative is displayed.
+    If the given word is contained in the word list, then it is replaced with a tuple built so that the word gets
+    highlighted and an alternative is displayed (in the syntax of st.annotated_text).
+    :param word: a given word
     :param dict_wordlist: the researched words plus synomimes as dictionary
+    :param lemmatizer: the IWNLP lemmatizer
     :return:
     '''
-    dict_replacement = {word: annotation(word,
-                                         f'Alternative: {dict_wordlist[word]["Synonyme"]}',
-                                         background='#faaa',
-                                         color="black",
-                                         border='1px solid gray')
-                        for word in dict_wordlist.keys()}
-    dict_replacement['schmus'] = annotation('schmusen',
-                                            f'Alternative: {dict_wordlist["schmusen"]["Synonyme"]}',
-                                            background='#73e000',
-                                            # background='#faaa',
-                                            color="black",
-                                            border='1px solid gray')
+    stemmed_word = stem_word(word, lemmatizer)
+    if stemmed_word in dict_wordlist.keys():
+        replaced_word = annotation(word,
+                                   f'Alternative: {dict_wordlist[stemmed_word]["Synonyme"]}',
+                                   background='#faaa',
+                                   color="black",
+                                   border='1px solid gray')
+    else:
+        replaced_word = word + ' '
 
-    return dict_replacement
+    return replaced_word
 
 
-def stem_word(word):
+def stem_word(word, lemmatizer):
     '''
     The function returns the stem of the given word
-    :param word: a word
+    :param word: a given word
+    :param lemmatizer: the IWNLP lemmatizer
     :return: the word stem
     '''
-    # TODO try further stemming or lemmatizing tools with spacy, treetagger or HanTa (or nltk cistem)
-    snow_stemmer = SnowballStemmer(language='german')
-    word_stem = snow_stemmer.stem(word.replace(' ', ''))
+    word_stem_list = lemmatizer.lemmatize_plain(word.replace(' ', ''))
+    if not word_stem_list:
+        word_stem = ''
+    else:
+        # TODO check if the first is a good option
+        word_stem = word_stem_list[0]
     return word_stem
 
 
@@ -91,8 +100,6 @@ def run_analysis(input_text, filename):
     :return: the text to be displayed in the app
     '''
     dict_words = read_excel_to_dict(filename)
-    dict_replacements = build_replacement(dict_words)
-    tokenizer = SoMaJo("de_CMC", split_camel_case=True)
 
     text_tokenized = []
     for paragraph in input_text:
@@ -102,14 +109,16 @@ def run_analysis(input_text, filename):
     text_tokenized_set = {word for paragraph in text_tokenized for sentence in paragraph for word in sentence}
 
     dict_words_set = set(dict_words.keys())
+    text_output = []
     if text_tokenized_set.intersection(dict_words_set):
         for paragraph in text_tokenized:
+            text_output = []
+            paragraph_enriched = []
             for sentence in paragraph:
-                text_output = []
-                sentence_enriched = [dict_replacements[item] if stem_word(item) in dict_replacements.keys() else item + ' '
-                                 for item in sentence]
-                sentence_output = annotated_text(*sentence_enriched)
-                text_output.append(sentence_output)
+                sentence_enriched = [replace_word(item, dict_words, lemmatizer) for item in sentence]
+                paragraph_enriched = paragraph_enriched + sentence_enriched
+            paragraph_output = annotated_text(*paragraph_enriched)
+            text_output.append(paragraph_output)
     else:
         st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter!')
         text_output = st.write('  \n'.join(input_text))
@@ -119,4 +128,3 @@ def run_analysis(input_text, filename):
 
 if st.button('Analysiere deinen Text'):
     run_analysis(txt, 'app/wordlist.xlsx')
-
