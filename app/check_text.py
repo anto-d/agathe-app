@@ -6,11 +6,32 @@ from iwnlp.iwnlp_wrapper import IWNLPWrapper
 
 st.set_page_config(page_title='Agathe App', layout='wide')
 
-# load stuff
-tokenizer = SoMaJo("de_CMC", split_camel_case=True)
-# TODO improve performance
-# latest processed IWNLP dump: http://lager.cs.uni-duesseldorf.de/NLP/IWNLP/IWNLP.Lemmatizer_20181001.zip
-lemmatizer = IWNLPWrapper(lemmatizer_path='app/IWNLP.Lemmatizer_20181001.json')
+
+# load nlp components
+@st.cache_data
+def load_nlp_resources():
+    """
+    Load and initialize necessary resources for natural language processing.
+
+    This function loads the SoMaJo tokenizer for German language with the 'de_CMC' model
+    and sets the 'split_camel_case' option to True for improved tokenization performance.
+    It also loads the IWNLP lemmatizer wrapper with the specified path to the lemmatizer JSON file.
+
+    Returns:
+    - tokenizer_somajo (SoMaJoTokenizer): A tokenizer object from SoMaJo.
+    - lemmatizer_iwnlp (IWNLPWrapper): A wrapper object for the IWNLP lemmatizer.
+
+    Note: IWNLP lemmatizer file http://lager.cs.uni-duesseldorf.de/NLP/IWNLP/IWNLP.Lemmatizer_20181001.zip
+    :return: a tuple
+    """
+    tokenizer_somajo = SoMaJo("de_CMC", split_camel_case=True)
+    # TODO improve performance
+    # latest processed IWNLP dump: http://lager.cs.uni-duesseldorf.de/NLP/IWNLP/IWNLP.Lemmatizer_20181001.zip
+    lemmatizer_iwnlp = IWNLPWrapper(lemmatizer_path='app/IWNLP.Lemmatizer_20181001.json')
+    return tokenizer_somajo, lemmatizer_iwnlp
+
+
+tokenizer_somajo, lemmatizer_iwnlp = load_nlp_resources()
 
 # configure sidebar
 st.sidebar.image('logo.png')
@@ -62,10 +83,10 @@ def replace_word(word, dict_wordlist, lemmatizer):
     :param lemmatizer: the IWNLP lemmatizer
     :return:
     '''
-    stemmed_word = stem_word(word, lemmatizer)
-    if stemmed_word in dict_wordlist.keys():
+    word_lemma = lemmatize_word(word, lemmatizer)
+    if word_lemma in dict_wordlist.keys():
         replaced_word = annotation(word,
-                                   f'Alternative: {dict_wordlist[stemmed_word]["Synonyme"]}',
+                                   f'Alternative: {dict_wordlist[word_lemma]["Synonyme"]}',
                                    background='#faaa',
                                    color="black",
                                    border='1px solid gray')
@@ -75,20 +96,20 @@ def replace_word(word, dict_wordlist, lemmatizer):
     return replaced_word
 
 
-def stem_word(word, lemmatizer):
+def lemmatize_word(word, lemmatizer):
     '''
-    The function returns the stem of the given word
+    The function returns the lemma of the given word
     :param word: a given word
     :param lemmatizer: the IWNLP lemmatizer
-    :return: the word stem
+    :return: the word lemma
     '''
-    word_stem_list = lemmatizer.lemmatize_plain(word.replace(' ', ''))
-    if not word_stem_list:
-        word_stem = ''
+    word_lemma_list = lemmatizer.lemmatize_plain(word.replace(' ', ''))
+    if not word_lemma_list:
+        word_lemma = ''
     else:
-        # TODO check if the first is a good option
-        word_stem = word_stem_list[0]
-    return word_stem
+        # TODO check if the first element in the list is the best option
+        word_lemma = word_lemma_list[0]
+    return word_lemma
 
 
 def run_analysis(input_text, filename):
@@ -103,7 +124,7 @@ def run_analysis(input_text, filename):
 
     text_tokenized = []
     for paragraph in input_text:
-        tokenized_paragraphs = tokenizer.tokenize_text([paragraph])
+        tokenized_paragraphs = tokenizer_somajo.tokenize_text([paragraph])
         text_tokenized.append([[token.text for token in sentence] for sentence in tokenized_paragraphs])
 
     text_tokenized_set = {word for paragraph in text_tokenized for sentence in paragraph for word in sentence}
@@ -115,7 +136,7 @@ def run_analysis(input_text, filename):
             text_output = []
             paragraph_enriched = []
             for sentence in paragraph:
-                sentence_enriched = [replace_word(item, dict_words, lemmatizer) for item in sentence]
+                sentence_enriched = [replace_word(item, dict_words, lemmatizer_iwnlp) for item in sentence]
                 paragraph_enriched = paragraph_enriched + sentence_enriched
             paragraph_output = annotated_text(*paragraph_enriched)
             text_output.append(paragraph_output)
