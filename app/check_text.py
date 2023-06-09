@@ -4,7 +4,7 @@ import pandas as pd
 from somajo import SoMaJo
 from iwnlp.iwnlp_wrapper import IWNLPWrapper
 
-st.set_page_config(page_title='Agathe App', layout='wide')
+st.set_page_config(page_title='Agathe App')#, layout='wide')
 
 
 # load nlp components
@@ -36,13 +36,13 @@ tokenizer_somajo, lemmatizer_iwnlp = load_nlp_resources()
 # configure sidebar
 st.sidebar.image('logo.png')
 st.sidebar.title('*Erster Entwurf*')
-st.sidebar.write('''
-Ein Projekt von:  
+# st.sidebar.write('''
+# Ein Projekt von:  
 
- Antonella D'Avanzo  
- Sabrina Sarkodie-Gyan  
- Susanne Molter    
-''')
+#  Antonella D'Avanzo  
+#  Sabrina Sarkodie-Gyan  
+#  Susanne Molter    
+# ''')
 
 # st.sidebar.caption('Made with python')
 
@@ -59,7 +59,7 @@ eine Alternative/ein Synonym vor.
 
 ---"""
 
-text = st.text_area('Gib hier deinen Text ein:', '''''')
+text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
 txt = text.split("\n")
 
 
@@ -85,9 +85,11 @@ def replace_word(word, dict_wordlist, lemmatizer):
     '''
     word_lemma = lemmatize_word(word, lemmatizer)
     if word_lemma in dict_wordlist.keys():
+        # 9F2B68
+        background_color = '#faaa' if dict_wordlist[word_lemma]["abwertend"] == 'ja' else '#50C878'
         replaced_word = annotation(word,
                                    f'Alternative: {dict_wordlist[word_lemma]["Synonyme"]}',
-                                   background='#faaa',
+                                   background=background_color,
                                    color="black",
                                    border='1px solid gray')
     else:
@@ -121,7 +123,6 @@ def run_analysis(input_text, filename):
     :return: the text to be displayed in the app
     '''
     dict_words = read_excel_to_dict(filename)
-
     text_tokenized = []
     for paragraph in input_text:
         tokenized_paragraphs = tokenizer_somajo.tokenize_text([paragraph])
@@ -132,6 +133,7 @@ def run_analysis(input_text, filename):
     dict_words_set = set(dict_words.keys())
     text_output = []
     if text_tokenized_set.intersection(dict_words_set):
+        st.info(f'Dein Text enthält X Stellen mit aus dem Jiddischen stammenden Wörtern.')
         for paragraph in text_tokenized:
             text_output = []
             paragraph_enriched = []
@@ -141,11 +143,21 @@ def run_analysis(input_text, filename):
             paragraph_output = annotated_text(*paragraph_enriched)
             text_output.append(paragraph_output)
     else:
-        st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter!')
+        st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
         text_output = st.write('  \n'.join(input_text))
 
     return text_output
 
 
+
 if st.button('Analysiere deinen Text'):
     run_analysis(txt, 'app/wordlist.xlsx')
+
+st.header(" ", anchor='test')
+expander = st.expander('Hintergrund und Quellen', expanded=False)
+# expander.write('Background info here')
+# expander.write('Quellen')
+expander.write('''
+* Steinke, R. (2020) Antisemitismus in der Sprache. Duden Bibliograph. Instit. GmbH.
+* Deutsche Welle. Alltagsdeutsch – Podcast: Dufte! – Jiddische Wörter im Deutschen. https://www.dw.com/de/dufte-jiddische-w%C3%B6rter-im-deutschen/a-4786777. 2022
+* Schwarz-Friesel, M., & Reinharz, J. (2013). Die Sprache der Judenfeindschaft im 21. Jahrhundert (1st ed.). De Gruyter. http://www.jstor.org/stable/j.ctvbkjx39''')
