@@ -35,7 +35,7 @@ tokenizer_somajo, lemmatizer_iwnlp = load_nlp_resources()
 
 # configure sidebar
 st.sidebar.image('logo.png')
-st.sidebar.title('*Erster Entwurf*')
+# st.sidebar.title('*Erster Entwurf*')
 # st.sidebar.write('''
 # Ein Projekt von:  
 
@@ -69,9 +69,25 @@ def read_excel_to_dict(excel_file):
     :param excel_file: the given (local) excel file
     :return: a dictionary
     '''
-    df_from_excel = pd.read_excel(excel_file, index_col=0, dtype=str)
+    df_from_excel = pd.read_excel(excel_file, index_col=0, dtype=str).fillna('N/A')
     dict_from_excel = df_from_excel.to_dict('index')
     return dict_from_excel
+
+
+def lemmatize_word(word, lemmatizer):
+    '''
+    The function returns the lemma of the given word
+    :param word: a given word
+    :param lemmatizer: the IWNLP lemmatizer
+    :return: the word lemma
+    '''
+    word_lemma_list = lemmatizer.lemmatize_plain(word.replace(' ', ''))
+    if not word_lemma_list:
+        word_lemma = ''
+    else:
+        # TODO check if the first element in the list is the best option
+        word_lemma = word_lemma_list[0]
+    return word_lemma
 
 
 def replace_word(word, dict_wordlist, lemmatizer):
@@ -98,31 +114,19 @@ def replace_word(word, dict_wordlist, lemmatizer):
     return replaced_word
 
 
-def lemmatize_word(word, lemmatizer):
-    '''
-    The function returns the lemma of the given word
-    :param word: a given word
-    :param lemmatizer: the IWNLP lemmatizer
-    :return: the word lemma
-    '''
-    word_lemma_list = lemmatizer.lemmatize_plain(word.replace(' ', ''))
-    if not word_lemma_list:
-        word_lemma = ''
-    else:
-        # TODO check if the first element in the list is the best option
-        word_lemma = word_lemma_list[0]
-    return word_lemma
-
-
 def run_analysis(input_text, filename):
     '''
-    The function analyses a given text, substitutes to the given words a coresponding tuple so that the word can be
+    The function analyses a given text, substitutes to the given words a corresponding tuple so that the word can be
     highlighted and synonim displayed with annotated_text
     :param input_text: the text to be analysed
     :param filename: the file with the wordlist
     :return: the text to be displayed in the app
     '''
+
+    # read the wordlist
     dict_words = read_excel_to_dict(filename)
+
+    # tokenize input text
     text_tokenized = []
     for paragraph in input_text:
         tokenized_paragraphs = tokenizer_somajo.tokenize_text([paragraph])
@@ -130,10 +134,13 @@ def run_analysis(input_text, filename):
 
     text_tokenized_set = {word for paragraph in text_tokenized for sentence in paragraph for word in sentence}
 
+    # check if the input text contains the words in the wordlist
     dict_words_set = set(dict_words.keys())
     text_output = []
-    if text_tokenized_set.intersection(dict_words_set):
-        st.info(f'Dein Text enthält X Stellen mit aus dem Jiddischen stammenden Wörtern.')
+    jiddish_set = text_tokenized_set.intersection(dict_words_set)
+    if jiddish_set:
+        
+        st.info(f'Dein Text enthält {len(jiddish_set)} Stelle(n) mit aus dem Jiddischen stammenden Wörtern.')
         for paragraph in text_tokenized:
             text_output = []
             paragraph_enriched = []
@@ -142,6 +149,16 @@ def run_analysis(input_text, filename):
                 paragraph_enriched = paragraph_enriched + sentence_enriched
             paragraph_output = annotated_text(*paragraph_enriched)
             text_output.append(paragraph_output)
+
+        # add the words' origins to the sidebar
+        # turn a set into an alphabetically ordered list
+        jiddish_list = list(jiddish_set)
+        jiddish_list.sort()
+        st.sidebar.header('Herkunft')
+        for word in jiddish_list:
+            st.sidebar.subheader(f'*{word}*')
+            st.sidebar.write(dict_words[word]['Herkunft'])
+
     else:
         st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
         text_output = st.write('  \n'.join(input_text))
