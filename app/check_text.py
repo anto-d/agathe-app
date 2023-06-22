@@ -90,16 +90,21 @@ def lemmatize_word(word, lemmatizer):
     return word_lemma
 
 
-def replace_word(word, dict_wordlist, lemmatizer):
+def replace_word(token, dict_wordlist, lemmatizer):
     '''
-    If the given word is contained in the word list, then it is replaced with a tuple built so that the word gets
-    highlighted and an alternative is displayed (in the syntax of st.annotated_text).
-    :param word: a given word
+    The text is extracted from the given token. If the extracted word is contained in the word list, then it is replaced 
+    with a tuple built so that the word gets highlighted and an alternative is displayed (in the syntax of st.annotated_text).
+    A space is added after the word, if it present in the text (this is verified with the space_after parameter).
+    Asterisks are escaped to avoid collisions with the markup syntax.
+    :param word: a given token
     :param dict_wordlist: the researched words plus synomimes as dictionary
     :param lemmatizer: the IWNLP lemmatizer
     :return:
     '''
+    word = token.text
+    space_after_word = token.space_after
     word_lemma = lemmatize_word(word, lemmatizer)
+
     if word_lemma in dict_wordlist.keys():
         # 9F2B68
         background_color = '#faaa' if dict_wordlist[word_lemma]["abwertend"] == 'ja' else '#50C878'
@@ -109,7 +114,7 @@ def replace_word(word, dict_wordlist, lemmatizer):
                                    color="black",
                                    border='1px solid gray')
     else:
-        replaced_word = word + ' '
+        replaced_word = word.replace('*', '\*') + ' ' if space_after_word else word.replace('*', '\*')
 
     return replaced_word
 
@@ -126,13 +131,13 @@ def run_analysis(input_text, filename):
     # read the wordlist
     dict_words = read_excel_to_dict(filename)
 
-    # tokenize input text
+    # tokenize input text, as a list of sentences
     text_tokenized = []
     for paragraph in input_text:
         tokenized_paragraphs = tokenizer_somajo.tokenize_text([paragraph])
-        text_tokenized.append([[token.text for token in sentence] for sentence in tokenized_paragraphs])
+        text_tokenized.append([[token for token in sentence] for sentence in tokenized_paragraphs])
 
-    text_tokenized_set = {word for paragraph in text_tokenized for sentence in paragraph for word in sentence}
+    text_tokenized_set = {word.text for paragraph in text_tokenized for sentence in paragraph for word in sentence}
 
     # check if the input text contains the words in the wordlist
     dict_words_set = set(dict_words.keys())
@@ -145,7 +150,8 @@ def run_analysis(input_text, filename):
             text_output = []
             paragraph_enriched = []
             for sentence in paragraph:
-                sentence_enriched = [replace_word(item, dict_words, lemmatizer_iwnlp) for item in sentence]
+                sentence_enriched = [replace_word(token, dict_words, lemmatizer_iwnlp) for token in sentence]
+
                 paragraph_enriched = paragraph_enriched + sentence_enriched
             paragraph_output = annotated_text(*paragraph_enriched)
             text_output.append(paragraph_output)
