@@ -1,11 +1,11 @@
 import streamlit as st
+from st_btn_select import st_btn_select
 from annotated_text import annotated_text, annotation
 import pandas as pd
 from somajo import SoMaJo
 from iwnlp.iwnlp_wrapper import IWNLPWrapper
 
 st.set_page_config(page_title='Agathe App')#, layout='wide')
-
 
 # load nlp components
 @st.cache_data
@@ -32,35 +32,6 @@ def load_nlp_resources():
 
 
 tokenizer_somajo, lemmatizer_iwnlp = load_nlp_resources()
-
-# configure sidebar
-st.sidebar.image('logo.png')
-# st.sidebar.title('*Erster Entwurf*')
-# st.sidebar.write('''
-# Ein Projekt von:  
-
-#  Antonella D'Avanzo  
-#  Sabrina Sarkodie-Gyan  
-#  Susanne Molter    
-# ''')
-
-# st.sidebar.caption('Made with python')
-
-st.title('Agathe App')
-st.subheader('*Entwurf*')
-"""
-
-In der deutschen Sprache gibt es zahlreiche Lehnwörter, die aus dem Jiddischen stammen. Viele davon haben eine 
-ähnliche Bedeutung, sind aber im Deutschen oft negativ konnotiert. Diese Konnotation wurde den Begriffen jedoch erst 
-mit ihrer Entlehnung in die deutsche Sprache zugeschrieben. 
-
-Das Tool hilft dir, solche Wörter in deinen geschrieben Texten zu erkennen: es markiert sie und schlägt dir 
-eine Alternative/ein Synonym vor.
-
----"""
-
-text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
-txt = text.split("\n")
 
 
 def read_excel_to_dict(excel_file):
@@ -172,15 +143,49 @@ def run_analysis(input_text, filename):
     return text_output
 
 
+# configure sidebar
+st.sidebar.image('logo.png')
+# st.sidebar.title('*Erster Entwurf*')
+# st.sidebar.write('''
+# Ein Projekt von:  
 
-if st.button('Analysiere deinen Text'):
-    run_analysis(txt, 'app/wordlist.xlsx')
+#  Antonella D'Avanzo  
+#  Sabrina Sarkodie-Gyan  
+#  Susanne Molter    
+# ''')
 
-st.header(" ", anchor='test')
-expander = st.expander('Hintergrund und Quellen', expanded=False)
-# expander.write('Background info here')
-# expander.write('Quellen')
-expander.write('''
-* Steinke, R. (2020) Antisemitismus in der Sprache. Duden Bibliograph. Instit. GmbH.
-* Deutsche Welle. Alltagsdeutsch – Podcast: Dufte! – Jiddische Wörter im Deutschen. https://www.dw.com/de/dufte-jiddische-w%C3%B6rter-im-deutschen/a-4786777. 2022
-* Schwarz-Friesel, M., & Reinharz, J. (2013). Die Sprache der Judenfeindschaft im 21. Jahrhundert (1st ed.). De Gruyter. http://www.jstor.org/stable/j.ctvbkjx39''')
+# st.sidebar.caption('Made with python')
+
+st.title('Agathe App')
+st.subheader('*Entwurf*')
+navigation_buttons = ('Textanalyse', 'Hintergrund')
+page = st_btn_select(navigation_buttons, index=0)
+
+if page == navigation_buttons[0]:
+    """
+
+    In der deutschen Sprache gibt es zahlreiche Lehnwörter, die aus dem Jiddischen stammen. Viele davon haben eine 
+    ähnliche Bedeutung, sind aber im Deutschen oft negativ konnotiert. Diese Konnotation wurde den Begriffen jedoch erst 
+    mit ihrer Entlehnung in die deutsche Sprache zugeschrieben. 
+
+    Das Tool hilft dir, solche Wörter in deinen geschrieben Texten zu erkennen: es markiert sie und schlägt dir 
+    eine Alternative/ein Synonym vor.
+
+    ---"""
+    
+    text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
+    txt = text.split("\n")
+
+
+    if st.button('Analysiere deinen Text'):
+        run_analysis(txt, 'app/wordlist.xlsx')
+
+elif page == navigation_buttons[1]:
+    # st.header(" ", anchor='test')
+    # expander = st.expander('Hintergrund und Quellen', expanded=False)
+    # # expander.write('Background info here')
+    # # expander.write('Quellen')
+    st.write('''
+    * Steinke, R. (2020) Antisemitismus in der Sprache. Duden Bibliograph. Instit. GmbH.
+    * Deutsche Welle. Alltagsdeutsch – Podcast: Dufte! – Jiddische Wörter im Deutschen. https://www.dw.com/de/dufte-jiddische-w%C3%B6rter-im-deutschen/a-4786777. 2022
+    * Schwarz-Friesel, M., & Reinharz, J. (2013). Die Sprache der Judenfeindschaft im 21. Jahrhundert (1st ed.). De Gruyter. http://www.jstor.org/stable/j.ctvbkjx39''')
