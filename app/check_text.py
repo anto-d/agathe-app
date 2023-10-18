@@ -4,6 +4,8 @@ from annotated_text import annotated_text, annotation
 import pandas as pd
 from somajo import SoMaJo
 from iwnlp.iwnlp_wrapper import IWNLPWrapper
+from io import StringIO
+
 
 st.set_page_config(page_title='Agathe App')#, layout='wide')
 
@@ -45,14 +47,14 @@ def read_excel_to_dict(excel_file):
     return dict_from_excel
 
 
-def lemmatize_word(word, lemmatizer):
+def lemmatize_word(word, lemmatizer_iwnlp):
     '''
-    The function returns the lemma of the given word
+    The function returns the highest rated lemma of the given word
     :param word: a given word
     :param lemmatizer: the IWNLP lemmatizer
     :return: the word lemma
     '''
-    word_lemma_list = lemmatizer.lemmatize_plain(word.replace(' ', ''))
+    word_lemma_list = lemmatizer_iwnlp.lemmatize_plain(word.replace(' ', ''))
     if not word_lemma_list:
         word_lemma = ''
     else:
@@ -64,9 +66,10 @@ def lemmatize_word(word, lemmatizer):
 def replace_word(token, dict_wordlist, lemmatizer):
     '''
     The text is extracted from the given token. If the extracted word is contained in the word list, then it is replaced 
-    with a tuple built so that the word gets highlighted and an alternative is displayed (in the syntax of st.annotated_text).
+    with a tuple built so that the word gets highlighted (in the syntax of st.annotated_text).
     A space is added after the word, if it present in the text (this is verified with the space_after parameter).
     Asterisks are escaped to avoid collisions with the markup syntax.
+    The word is highlighted in red/green depending on whether it is marked derogatory or not in the excel file.
     :param word: a given token
     :param dict_wordlist: the researched words plus synomimes as dictionary
     :param lemmatizer: the IWNLP lemmatizer
@@ -76,6 +79,8 @@ def replace_word(token, dict_wordlist, lemmatizer):
     space_after_word = token.space_after
     word_lemma = lemmatize_word(word, lemmatizer)
 
+    # If the word's lemma is contained in the word list, the words is highlighted.
+    # else Asterisks are escaped.
     if word_lemma in dict_wordlist.keys():
         # 9F2B68
         background_color = '#faaa' if dict_wordlist[word_lemma]["abwertend"] == 'ja' else '#50C878'
@@ -93,13 +98,13 @@ def replace_word(token, dict_wordlist, lemmatizer):
 def run_analysis(input_text, filename, lemmatizer):
     '''
     The function analyses a given text, substitutes to the given words a corresponding tuple so that the word can be
-    highlighted and synonim displayed with annotated_text
+    highlighted with annotated_text and synonym/origin displayed in the sidebar.
     :param input_text: the text to be analysed
     :param filename: the file with the wordlist
-    :return: the text to be displayed in the app
+    :return: the text + sidebar to be displayed in the app
     '''
 
-    # read the wordlist
+    # read the wordlist as a dictionary
     dict_words = read_excel_to_dict(filename)
 
     # tokenize input text, as a list of sentences
@@ -107,28 +112,25 @@ def run_analysis(input_text, filename, lemmatizer):
     for paragraph in input_text:
         tokenized_paragraphs = tokenizer_somajo.tokenize_text([paragraph])
         text_tokenized.append([[token for token in sentence] for sentence in tokenized_paragraphs])
-
-    # TODO BUG word -> lemma
+    # check if the input text contains the words in the wordlist (faster if using sets)
     text_tokenized_set = {lemmatize_word(word.text, lemmatizer) for paragraph in text_tokenized for sentence in paragraph for word in sentence}
-
-    # check if the input text contains the words in the wordlist
     dict_words_set = set(dict_words.keys())
     text_output = []
     jiddish_set = text_tokenized_set.intersection(dict_words_set)
+
     if jiddish_set:
-        
         st.info(f'Dein Text enthält {len(jiddish_set)} Stelle(n) mit aus dem Jiddischen stammenden Wörtern.')
         for paragraph in text_tokenized:
             text_output = []
             paragraph_enriched = []
             for sentence in paragraph:
+                # highlight word
                 sentence_enriched = [replace_word(token, dict_words, lemmatizer) for token in sentence]
-
                 paragraph_enriched = paragraph_enriched + sentence_enriched
             paragraph_output = annotated_text(*paragraph_enriched)
             text_output.append(paragraph_output)
 
-        # add the words' origins to the sidebar
+        # add the words' origins/synonymx    to the sidebar
         # turn a set into an alphabetically ordered list
         jiddish_list = list(jiddish_set)
         jiddish_list.sort()
@@ -141,7 +143,7 @@ def run_analysis(input_text, filename, lemmatizer):
             st.sidebar.markdown('-------')
 
     else:
-        st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
+        st.info('Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
         text_output = st.write('  \n'.join(input_text))
 
     return text_output
@@ -182,12 +184,21 @@ if page == navigation_buttons[0]:
         text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
         txt = text.split('\n')
     
-        if st.button('Analysiere deinen Text'):
+        if st.button('Analysiere deinen Text', key='text_from_input'):
             run_analysis(txt, 'app/wordlist.xlsx', lemmatizer_iwnlp)
 
     with tab2:
-        uploaded_file = st.file_uploader('Lade hier deine Text-Datei hoch:', help='Unterstützte Formate: txt, pdf, doc, odt.')
-        st.write('placeholder, WIP')
+        uploaded_file = st.file_uploader('Lade hier deine Text-Datei hoch:', 
+                                         type=['txt'],
+                                         help='Unterstützte Formate: txt, pdf, doc, odt.')
+        if st.button('Analysiere deinen Text', key='text_from_file'):
+            if uploaded_file:
+                # To convert to a string based IO:
+                stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+                string_data = stringio.read()
+                txt = string_data.split('\n')
+                # run_analysis(string_data, 'app/wordlist.xlsx', lemmatizer_iwnlp)
+                # st.write(uploaded_file)
 
 elif page == navigation_buttons[1]:
     # st.header(" ", anchor='test')
