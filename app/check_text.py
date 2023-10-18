@@ -80,7 +80,7 @@ def replace_word(token, dict_wordlist, lemmatizer):
         # 9F2B68
         background_color = '#faaa' if dict_wordlist[word_lemma]["abwertend"] == 'ja' else '#50C878'
         replaced_word = annotation(word,
-                                   f'Alternative: {dict_wordlist[word_lemma]["Synonyme"]}',
+                                   #f'Alternative: {dict_wordlist[word_lemma]["Synonyme"]}',
                                    background=background_color,
                                    color="black",
                                    border='1px solid gray')
@@ -90,7 +90,7 @@ def replace_word(token, dict_wordlist, lemmatizer):
     return replaced_word
 
 
-def run_analysis(input_text, filename):
+def run_analysis(input_text, filename, lemmatizer):
     '''
     The function analyses a given text, substitutes to the given words a corresponding tuple so that the word can be
     highlighted and synonim displayed with annotated_text
@@ -121,7 +121,7 @@ def run_analysis(input_text, filename):
             text_output = []
             paragraph_enriched = []
             for sentence in paragraph:
-                sentence_enriched = [replace_word(token, dict_words, lemmatizer_iwnlp) for token in sentence]
+                sentence_enriched = [replace_word(token, dict_words, lemmatizer) for token in sentence]
 
                 paragraph_enriched = paragraph_enriched + sentence_enriched
             paragraph_output = annotated_text(*paragraph_enriched)
@@ -133,8 +133,11 @@ def run_analysis(input_text, filename):
         jiddish_list.sort()
         st.sidebar.header('Herkunft')
         for word in jiddish_list:
-            st.sidebar.subheader(f'*{word}*')
+            word_lemma = lemmatize_word(word, lemmatizer)
+            st.sidebar.subheader(f'*{word_lemma}*')
             st.sidebar.write(dict_words[word]['Herkunft'])
+            st.sidebar.write(f'Alternative: {dict_words[word_lemma]["Synonyme"]}')
+            st.sidebar.markdown('-------')
 
     else:
         st.info(f'Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
@@ -172,13 +175,18 @@ if page == navigation_buttons[0]:
     eine Alternative/ein Synonym vor.
 
     ---"""
+    tab1, tab2 = st.tabs(['Enter text', 'Upload file'])
+
+    with tab1:
+        text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
+        txt = text.split('\n')
     
-    text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
-    txt = text.split("\n")
+        if st.button('Analysiere deinen Text'):
+            run_analysis(txt, 'app/wordlist.xlsx', lemmatizer_iwnlp)
 
-
-    if st.button('Analysiere deinen Text'):
-        run_analysis(txt, 'app/wordlist.xlsx')
+    with tab2:
+        uploaded_file = st.file_uploader('Lade hier deine Text-Datei hoch:', help='Unterstützte Formate: txt, pdf, doc, odt.')
+        st.write('placeholder, WIP')
 
 elif page == navigation_buttons[1]:
     # st.header(" ", anchor='test')
