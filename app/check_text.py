@@ -95,7 +95,7 @@ def replace_word(token, dict_wordlist, lemmatizer):
     return replaced_word
 
 
-def run_analysis(input_text, filename, lemmatizer):
+def run_analysis(text, filename, lemmatizer):
     '''
     The function analyses a given text, substitutes to the given words a corresponding tuple so that the word can be
     highlighted with annotated_text and synonym/origin displayed in the sidebar.
@@ -103,10 +103,11 @@ def run_analysis(input_text, filename, lemmatizer):
     :param filename: the file with the wordlist
     :return: the text + sidebar to be displayed in the app
     '''
-
     # read the wordlist as a dictionary
     dict_words = read_excel_to_dict(filename)
 
+    # split text in paragraphs
+    input_text = text.split('\n')
     # tokenize input text, as a list of sentences
     text_tokenized = []
     for paragraph in input_text:
@@ -182,10 +183,9 @@ if page == navigation_buttons[0]:
 
     with tab1:
         text = st.text_area('Gib hier deinen Text ein:', '''''', help= 'Test')
-        txt = text.split('\n')
     
         if st.button('Analysiere deinen Text', key='text_from_input'):
-            run_analysis(txt, 'app/wordlist.xlsx', lemmatizer_iwnlp)
+            run_analysis(text, 'app/wordlist.xlsx', lemmatizer_iwnlp)
 
     with tab2:
         uploaded_file = st.file_uploader('Lade hier deine Text-Datei hoch:', 
@@ -196,9 +196,7 @@ if page == navigation_buttons[0]:
                 # To convert to a string based IO:
                 stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
                 string_data = stringio.read()
-                txt = string_data.split('\n')
-                # run_analysis(string_data, 'app/wordlist.xlsx', lemmatizer_iwnlp)
-                # st.write(uploaded_file)
+                run_analysis(string_data, 'app/wordlist.xlsx', lemmatizer_iwnlp)
 
 elif page == navigation_buttons[1]:
     # st.header(" ", anchor='test')
