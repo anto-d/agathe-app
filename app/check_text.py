@@ -108,7 +108,8 @@ def run_analysis(input_text, filename, lemmatizer):
         tokenized_paragraphs = tokenizer_somajo.tokenize_text([paragraph])
         text_tokenized.append([[token for token in sentence] for sentence in tokenized_paragraphs])
 
-    text_tokenized_set = {word.text for paragraph in text_tokenized for sentence in paragraph for word in sentence}
+    # TODO BUG word -> lemma
+    text_tokenized_set = {lemmatize_word(word.text, lemmatizer) for paragraph in text_tokenized for sentence in paragraph for word in sentence}
 
     # check if the input text contains the words in the wordlist
     dict_words_set = set(dict_words.keys())
