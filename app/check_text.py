@@ -139,9 +139,11 @@ def run_analysis(text, filename, lemmatizer):
         for word in jiddish_list:
             word_lemma = lemmatize_word(word, lemmatizer)
             st.sidebar.subheader(f'*{word_lemma}*')
-            st.sidebar.write(dict_words[word]['Herkunft'])
-            st.sidebar.write(f'Alternative: {dict_words[word_lemma]["Synonyme"]}')
-            st.sidebar.markdown('-------')
+            st.sidebar.write(f'''
+                              {dict_words[word]["Herkunft"]}  
+                              Alternative: {dict_words[word_lemma]["Synonyme"]}  
+                              ___
+                            ''')
 
     else:
         st.info('Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
