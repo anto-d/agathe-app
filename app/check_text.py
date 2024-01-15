@@ -131,25 +131,37 @@ def run_analysis(text, filename, lemmatizer):
             paragraph_output = annotated_text(*paragraph_enriched)
             text_output.append(paragraph_output)
 
-        # add the words' origins/synonymx    to the sidebar
+        # add the words' origins/synonym to the sidebar
         # turn a set into an alphabetically ordered list
         jiddish_list = list(jiddish_set)
-        jiddish_list.sort()
-        st.sidebar.header('Herkunft')
+        jiddish_list.sort(key=str.lower)
+        st.sidebar.header('**Herkunft**')
         for word in jiddish_list:
             word_lemma = lemmatize_word(word, lemmatizer)
             st.sidebar.subheader(f'*{word_lemma}*')
             st.sidebar.write(f'''
-                              {dict_words[word]["Herkunft"]}  
-                              Alternative: {dict_words[word_lemma]["Synonyme"]}  
+                              {format_comments_for_sidebar(dict_words[word]["Kommentar"])}  
+                              ***Alternative***: {dict_words[word_lemma]["Synonyme"]}  
                               ___
-                            ''')
+                              ''')
 
     else:
         st.info('Dein Text enthält keine aus dem Jiddischen stammenden Wörter.')
         text_output = st.write('  \n'.join(input_text))
 
     return text_output
+
+def format_comments_for_sidebar(text):
+    """
+    Formats comments to the words in the wordlist for a clearer display in the sidebar.
+
+    :param text: The input text to be formatted.
+    :type text: str
+
+    :return: The formatted text ready for display.
+    :rtype: str
+    """
+    return text.replace('Jiddisch:', '*Jiddisch:*').replace('für:', '*für:*').replace('Abwertung:', '*Abwertung:*')
 
 
 # configure sidebar
