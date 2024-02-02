@@ -1,7 +1,7 @@
 openpyxl~=3.1.2
-streamlit~=1.22.0
-SoMaJo~=2.2.1
-st-annotated-text~=4.0.0
+streamlit~=1.31.0
+SoMaJo~=2.4.0
+st-annotated-text~=4.0.1
 st_btn_select~=0.1.2
 iwnlp~=0.1.7
 

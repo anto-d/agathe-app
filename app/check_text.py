@@ -23,12 +23,11 @@ def load_nlp_resources():
     - tokenizer_somajo (SoMaJoTokenizer): A tokenizer object from SoMaJo.
     - lemmatizer_iwnlp (IWNLPWrapper): A wrapper object for the IWNLP lemmatizer.
 
-    Note: IWNLP lemmatizer file http://lager.cs.uni-duesseldorf.de/NLP/IWNLP/IWNLP.Lemmatizer_20181001.zip
+    Note: latest processed IWNLP dump https://dbs.cs.uni-duesseldorf.de/datasets/iwnlp/IWNLP.Lemmatizer_20181001.zip
     :return: a tuple
     """
     tokenizer_somajo = SoMaJo("de_CMC", split_camel_case=True)
     # TODO improve performance
-    # latest processed IWNLP dump: http://lager.cs.uni-duesseldorf.de/NLP/IWNLP/IWNLP.Lemmatizer_20181001.zip
     lemmatizer_iwnlp = IWNLPWrapper(lemmatizer_path='app/IWNLP.Lemmatizer_20181001.json')
     return tokenizer_somajo, lemmatizer_iwnlp
 
