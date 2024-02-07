@@ -5,7 +5,10 @@ import pandas as pd
 from somajo import SoMaJo
 from iwnlp.iwnlp_wrapper import IWNLPWrapper
 from io import StringIO
-
+from docx2python import docx2python
+import os
+from striprtf.striprtf import rtf_to_text
+from odfdo import Document
 
 st.set_page_config(page_title='Agathe App')#, layout='wide')
 
@@ -81,10 +84,8 @@ def replace_word(token, dict_wordlist, lemmatizer):
     # If the word's lemma is contained in the word list, the words is highlighted.
     # else Asterisks are escaped.
     if word_lemma in dict_wordlist.keys():
-        # 9F2B68
         background_color = '#faaa' if dict_wordlist[word_lemma]["abwertend"] == 'ja' else '#50C878'
         replaced_word = annotation(word,
-                                   #f'Alternative: {dict_wordlist[word_lemma]["Synonyme"]}',
                                    background=background_color,
                                    color="black",
                                    border='1px solid gray')
@@ -150,6 +151,7 @@ def run_analysis(text, filename, lemmatizer):
 
     return text_output
 
+
 def format_comments_for_sidebar(text):
     """
     Formats comments to the words in the wordlist for a clearer display in the sidebar.
@@ -163,19 +165,50 @@ def format_comments_for_sidebar(text):
     return text.replace('Jiddisch:', '*Jiddisch:*').replace('für:', '*für:*').replace('Abwertung:', '*Abwertung:*')
 
 
+def read_uploaded_file_content(uploaded_file, file_extension):
+    """
+    Read the content of a file uploaded via st.file_uploader and return it as a string.
+
+    :param uploaded_file: A file object representing the uploaded file.
+    :param file_extension: The extension of the uploaded file.
+    :return: The content of the uploaded file as a string.
+
+    This function reads the content of an uploaded file and returns it as a string.
+    Depending on the file extension, different methods are used to extract the content:
+
+    - For `.txt` and `.rtf` files, the content is decoded and returned directly.
+    - For `.docx` files, the content is extracted using `docx2python`.
+    - For `.odt` files, the content is extracted using `odfdo.Document`.
+
+    Note:
+    Note that the formatting is lost, as st.annotated_text currently (Jan. 2024)
+    supports custom formatting only for the annotations and not for the rest of the text.
+    """
+    file_content = ''
+    if file_extension in ('.txt','.rtf'):
+        # To convert to a string based IO:
+        stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+        if file_extension == '.txt':
+            file_content = stringio.read()
+        elif file_extension == '.rtf':
+            file_content = rtf_to_text(stringio.read())
+    elif file_extension == '.docx':
+        file_content = docx2python(uploaded_file,html=False).text
+    elif file_extension == '.odt':
+        doc = Document(uploaded_file).body
+        extracted_text = []
+        # Iterate through paragraphs in the document
+        for paragraph in doc.get_paragraphs():
+            # Add text of each paragraph to the list
+            extracted_text.append(paragraph.get_formatted_text())
+        # Join the list of paragraphs into a single string
+        file_content='\n'.join(extracted_text)
+    return file_content
+
+
 # configure sidebar
 st.sidebar.image('logo.png')
-# st.sidebar.title('*Erster Entwurf*')
-# st.sidebar.write('''
-# Ein Projekt von:  
-
-#  Antonella D'Avanzo  
-#  Sabrina Sarkodie-Gyan  
-#  Susanne Molter    
-# ''')
-
-# st.sidebar.caption('Made with python')
-
+# configure page structure
 st.title('Agathe App')
 st.subheader('*Entwurf*')
 navigation_buttons = ('Textanalyse', 'Hintergrund')
@@ -202,14 +235,14 @@ if page == navigation_buttons[0]:
 
     with tab2:
         uploaded_file = st.file_uploader('Lade hier deine Text-Datei hoch:', 
-                                         type=['txt'],
-                                         help='Unterstützte Formate: txt, pdf, doc, odt.')
+                                         type=['txt', 'rtf', 'docx', 'odt'],
+                                         help='Unterstützte Formate: txt, rtf, docx, odt.')
         if st.button('Analysiere deinen Text', key='text_from_file'):
             if uploaded_file:
-                # To convert to a string based IO:
-                stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
-                string_data = stringio.read()
-                run_analysis(string_data, 'app/wordlist.xlsx', lemmatizer_iwnlp)
+                file_extension = os.path.splitext(uploaded_file.name)[-1].lower()
+                file_content = read_uploaded_file_content(uploaded_file, file_extension)
+                run_analysis(file_content, 'app/wordlist.xlsx', lemmatizer_iwnlp)
+
 
 elif page == navigation_buttons[1]:
     # st.header(" ", anchor='test')

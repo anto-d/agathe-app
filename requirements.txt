@@ -4,4 +4,6 @@ SoMaJo~=2.4.0
 st-annotated-text~=4.0.1
 st_btn_select~=0.1.2
 iwnlp~=0.1.7
-
+docx2python~=2.8.0
+odfdo~=3.5.0
+striprtf~=0.0.26
